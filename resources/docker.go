@@ -22,6 +22,10 @@ func InitDocker(address, container string) {
 	dCont = container // TODO: maybe pass in at GetStats?
 }
 
-func GetStats() map[string]DockerStats {
-	return map[string]DockerStats{}
+func GetStats(containers []string) map[string]DockerStats {
+	return map[string]DockerStats{"aaa": {1, 2, 3}, "bbb": {7, 1, 56}}
+}
+
+func Refresh() map[string]DockerStats {
+	return map[string]DockerStats{"aaa": {3, 2, 1}, "bbb": {67, 90, 3}}
 }
