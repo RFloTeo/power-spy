@@ -1,39 +1,74 @@
 package resources
 
 import (
-	"net/http"
+	"context"
+	"encoding/json"
+	"github.com/docker/docker/client"
 )
 
 var (
-	dClient *http.Client
-	dAddr   string
-	dCont   string
+	dClient *client.Client
 )
 
-type DockerStats struct {
-	CPU        int
-	NetworkIn  int
-	NetworkOut int
+type NetworkETH struct {
+	RxBytes int `json:"rx_bytes"`
+	TxBytes int `json:"tx_bytes"`
 }
 
-var testMap = map[string]DockerStats{"aaa": {1, 2, 3}, "bbb": {7, 1, 56}}
+type CpuStats struct {
+	CpuUsage struct {
+		Total int `json:"total_usage"`
+	} `json:"cpu_usage"`
+	SystemUsage int `json:"system_cpu_usage"`
+	OnlineCpus  int `json:"online_cpus"`
+}
 
-func InitDocker(address, container string) {
-	dClient = http.DefaultClient
-	dAddr = address   // TODO: try figuring out how to get it automagically
-	dCont = container // TODO: maybe pass in at GetStats?
+type JsonStats struct {
+	Network struct {
+		Eth0 NetworkETH `json:"eth0"`
+		Eth5 NetworkETH `json:"eth5"`
+	} `json:"network"`
+	Memory struct {
+		Stats struct {
+			Cache int `json:"cache"`
+		} `json:"stats"`
+		Usage    int `json:"usage"`
+		MaxUsage int `json:"max_usage"`
+	} `json:"memory_stats"`
+	Cpu    CpuStats `json:"cpu_stats"`
+	Precpu CpuStats `json:"precpu_stats"`
+}
+
+type DockerStats struct {
+	Memory        int
+	MemoryPercent float32
+	CPU           float32
+	NetworkIn     int
+	NetworkOut    int
+}
+
+func InitDocker(address, container string) error {
+	var err error
+	dClient, err = client.NewClientWithOpts(client.WithVersion("v1.41"))
+	return err
 }
 
 func GetStats(containers []string) map[string]DockerStats {
-	for k, stat := range testMap {
-		stat.CPU++
-		stat.NetworkOut++
-		stat.NetworkIn++
-		testMap[k] = stat
+	for _, c := range containers {
+		resp, err := dClient.ContainerStatsOneShot(context.Background(), c)
+		if err != nil {
+			continue
+		}
+		decoder := json.NewDecoder(resp.Body)
+		var decodedStats JsonStats
+		err = decoder.Decode(&decodedStats)
+		if err != nil {
+
+		}
 	}
-	return testMap
+	return nil
 }
 
 func Refresh() map[string]DockerStats {
-	return map[string]DockerStats{"aaa": {3, 2, 1}, "bbb": {67, 90, 3}}
+	return nil
 }
