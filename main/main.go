@@ -34,8 +34,12 @@ func main() {
 }
 
 func initModel() display.Model {
+	stats, err := resources.Refresh()
+	if err != nil {
+		log.Println("Failed initial refresh")
+	}
 	return display.Model{
-		Stats:    resources.Refresh(),
+		Stats:    stats,
 		Duration: 3 * time.Second,
 	}
 }

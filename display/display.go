@@ -32,7 +32,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "r":
-			m.Stats = resources.Refresh()
+			newStats, err := resources.Refresh()
+			if err == nil {
+				m.Stats = newStats
+			}
 		}
 	}
 	return m, tea.Every(m.Duration, func(t time.Time) tea.Msg {
@@ -43,7 +46,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	//TODO: Adapt to power usage and meaning of metrics when you find out
 	var b bytes.Buffer
-	tab := tabwriter.NewWriter(&b, 5, 4, 5, '\t', 0)
+	tab := tabwriter.NewWriter(&b, 5, 4, 1, '\t', 0)
 	s := "q-Quit r-Refresh\n"
 	fmt.Fprintln(tab, "ID\tCPU\tNetIn\tNetOut\tPower")
 	for key, stats := range m.Stats {
