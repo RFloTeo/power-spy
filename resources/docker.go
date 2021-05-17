@@ -70,12 +70,12 @@ func GetStats(containers []string) map[string]DockerStats {
 	return m
 }
 
-func Refresh() (map[string]DockerStats, error) {
+func Refresh() ([]Container, map[string]DockerStats, error) {
 	// Get container list
 	cs, err := GetContainers()
 	if err != nil {
 		log.Println("Refresh failed")
-		return nil, err
+		return []Container{}, nil, err
 	}
 
 	// Get stats for all the containers
@@ -84,5 +84,5 @@ func Refresh() (map[string]DockerStats, error) {
 		ids[i] = c.Id
 	}
 	stats := GetStats(ids)
-	return stats, nil
+	return cs, stats, nil
 }

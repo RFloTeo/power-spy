@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/RFloTeo/power-spy/display"
 	"github.com/RFloTeo/power-spy/resources"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"log"
 	"os"
@@ -34,12 +35,21 @@ func main() {
 }
 
 func initModel() display.Model {
-	stats, err := resources.Refresh()
+	ti := textinput.NewModel()
+	ti.Blur()
+	ti.Width = 30
+	ti.CharLimit = 100
+
+	containers, stats, err := resources.Refresh()
 	if err != nil {
 		log.Println("Failed initial refresh")
 	}
 	return display.Model{
-		Stats:    stats,
-		Duration: 3 * time.Second,
+		Containers: containers,
+		Stats:      stats,
+		Duration:   3 * time.Second,
+		ToggleFail: false,
+		StopFail:   false,
+		Text:       ti,
 	}
 }

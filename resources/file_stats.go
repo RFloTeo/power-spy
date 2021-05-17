@@ -1,30 +1,41 @@
 package resources
 
 import (
+	"log"
 	"os"
 )
 
 var (
-	recording_no = 0
-	isRecording  = false
-	f            *os.File
+	recordingNo = 0
+	IsRecording = false
+	f           *os.File
 )
 
-func toggleRecording() error {
-	if isRecording {
+func ToggleRecording() error {
+	if IsRecording {
 		err := f.Close()
 		if err != nil {
+			log.Printf("Failed to stop recording: %s\n", err.Error())
 			return err
 		}
 	} else {
 		var err error
-		f, err = os.Create(string(recording_no) + ".csv")
+		f, err = os.Create(string(recordingNo) + ".csv")
 		if err != nil {
+			log.Printf("Failed to start recording: %s\n", err.Error())
 			return err
 		}
-		recording_no++
+		recordingNo++
 	}
-	isRecording = !isRecording
+	IsRecording = !IsRecording
+	return nil
+}
+
+func StopRecording() error {
+	if IsRecording {
+		err := ToggleRecording()
+		return err
+	}
 	return nil
 }
 
