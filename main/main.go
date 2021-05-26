@@ -51,5 +51,6 @@ func initModel() display.Model {
 		ToggleFail: false,
 		StopFail:   false,
 		Text:       ti,
+		Filter:		"",
 	}
 }

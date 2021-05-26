@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"log"
+	"strings"
 	"text/tabwriter"
 	"time"
 )
@@ -18,6 +19,7 @@ type Model struct {
 	StopFail   bool
 	ToggleFail bool
 	Text       textinput.Model
+	Filter     string
 }
 
 type TickMsg time.Time
@@ -29,12 +31,18 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := []tea.Cmd{}
 	switch msg := msg.(type) {
 	case TickMsg:
 		keys := m.getKeys()
 		m.Stats = resources.GetStats(keys)
 
 	case tea.KeyMsg:
+		if m.Text.Focused() && msg.String() != " " {
+			m.Text, cmd := m.Text.Update(msg)
+			cmds = append(cmds, cmd)
+			break
+		}
 		switch msg.String() {
 		case "q": // Quit
 			err := resources.StopRecording()
@@ -56,13 +64,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ToggleFail = err != nil
 		case " ": // Focus/Blur textbox
 			if !resources.IsRecording {
-				//TODO: text box interaction
+				if m.Text.Focused() {
+					m.Text.Blur()
+					m.Filter = m.Text.Value()
+				} else {
+					_ = m.Text.Reset()
+					m.Text.Focus()
+				}
+
 			}
 		}
 	}
-	return m, tea.Every(m.Duration, func(t time.Time) tea.Msg {
+	cmds = append(cmds, tea.Every(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
 	})
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -94,8 +110,9 @@ func (m Model) View() string {
 		if len(c.Names) > 0 {
 			name = c.Names[0]
 		}
-
-		fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, name, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+		if strings.Contains(c.Id, m.Filter) || strings.Contains(name, m.Filter) {
+			fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, name, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+		}
 	}
 
 	// Finish up
