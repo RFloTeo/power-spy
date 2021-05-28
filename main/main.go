@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// Initialise logger
-	f, err := os.OpenFile("log.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("logs/log.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Printf("Something happened: %s", err.Error())
 		os.Exit(1)
@@ -36,6 +36,7 @@ func main() {
 
 func initModel() display.Model {
 	ti := textinput.NewModel()
+	ti.Placeholder = "Filter"
 	ti.Blur()
 	ti.Width = 30
 	ti.CharLimit = 100
@@ -51,6 +52,6 @@ func initModel() display.Model {
 		ToggleFail: false,
 		StopFail:   false,
 		Text:       ti,
-		Filter:		"",
+		Filter:     "",
 	}
 }

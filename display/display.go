@@ -25,21 +25,26 @@ type Model struct {
 type TickMsg time.Time
 
 func (m Model) Init() tea.Cmd {
-	return tea.Every(m.Duration, func(t time.Time) tea.Msg {
+	return tea.Batch(textinput.Blink, tea.Every(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	})
+	}))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := []tea.Cmd{}
+	var cmds = []tea.Cmd{}
 	switch msg := msg.(type) {
 	case TickMsg:
 		keys := m.getKeys()
-		m.Stats = resources.GetStats(keys)
+		newStats := resources.GetStats(keys)
+		for newKey := range newStats {
+			m.Stats[newKey] = newStats[newKey]
+		}
+		go resources.RecordStats(m.Containers, m.Stats)
 
 	case tea.KeyMsg:
 		if m.Text.Focused() && msg.String() != " " {
-			m.Text, cmd := m.Text.Update(msg)
+			var cmd tea.Cmd
+			m.Text, cmd = m.Text.Update(msg)
 			cmds = append(cmds, cmd)
 			break
 		}
@@ -69,6 +74,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.Filter = m.Text.Value()
 				} else {
 					_ = m.Text.Reset()
+					m.Filter = ""
 					m.Text.Focus()
 				}
 
@@ -77,7 +83,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	cmds = append(cmds, tea.Every(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	})
+	}))
 	return m, tea.Batch(cmds...)
 }
 
@@ -114,10 +120,12 @@ func (m Model) View() string {
 			fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, name, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
 		}
 	}
-
-	// Finish up
 	tab.Flush()
 	s += b.String()
+
+	// text box
+	s += "\n" + m.Text.View() + "\n\n"
+
 	return s
 }
 
