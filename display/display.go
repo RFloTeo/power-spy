@@ -20,6 +20,7 @@ type Model struct {
 	ToggleFail bool
 	Text       textinput.Model
 	Filter     string
+	MuW        int
 }
 
 type TickMsg time.Time
@@ -39,7 +40,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for newKey := range newStats {
 			m.Stats[newKey] = newStats[newKey]
 		}
-		go resources.RecordStats(m.Containers, m.Stats)
+		if resources.PowerOn {
+			m.MuW = resources.GetMicroWatts()
+		}
+		go resources.RecordStats(m.Containers, m.Stats, m.MuW)
 
 	case tea.KeyMsg:
 		if m.Text.Focused() && msg.String() != " " {
@@ -65,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "o": // Toggle recording
-			err := resources.ToggleRecording()
+			err := resources.ToggleRecording(m.Filter, len(m.Containers), int(m.Duration))
 			m.ToggleFail = err != nil
 		case " ": // Focus/Blur textbox
 			if !resources.IsRecording {
@@ -112,16 +116,17 @@ func (m Model) View() string {
 	for _, c := range m.Containers {
 		stats := m.Stats[c.Id]
 
-		name := ""
-		if len(c.Names) > 0 {
-			name = c.Names[0]
-		}
-		if strings.Contains(c.Id, m.Filter) || strings.Contains(name, m.Filter) {
-			fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, name, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+		if strings.Contains(c.Id, m.Filter) || strings.Contains(c.Image, m.Filter) {
+			fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, c.Image, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
 		}
 	}
 	tab.Flush()
 	s += b.String()
+
+	// Power reading
+	if resources.PowerOn {
+		s += fmt.Sprintf("Power: %.2f W\n", float64(m.MuW)/1000000)
+	}
 
 	// text box
 	s += "\n" + m.Text.View() + "\n\n"

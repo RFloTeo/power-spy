@@ -19,7 +19,6 @@ func InitDocker() error {
 }
 
 func GetContainers() ([]Container, error) {
-	//TODO: Add filter for searched name
 	resp, err := dClient.ContainerList(context.Background(), types.ContainerListOptions{})
 	if err != nil {
 		log.Printf("Getting containers failed: %s\n", err.Error())
@@ -29,7 +28,7 @@ func GetContainers() ([]Container, error) {
 	for i, c := range resp {
 		containers[i] = Container{
 			Id:    c.ID,
-			Names: c.Names,
+			Image: c.Image,
 		}
 	}
 	return containers, nil

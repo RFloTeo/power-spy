@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/RFloTeo/power-spy/display"
 	"github.com/RFloTeo/power-spy/resources"
@@ -12,13 +13,15 @@ import (
 )
 
 func main() {
+	processFlags()
+
 	err := resources.InitDocker()
 	if err != nil {
 		log.Fatalf("Couldn't start Docker client: %s\n", err.Error())
 	}
 
 	// Initialise logger
-	f, err := os.OpenFile("logs/log.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Printf("Something happened: %s", err.Error())
 		os.Exit(1)
@@ -48,10 +51,25 @@ func initModel() display.Model {
 	return display.Model{
 		Containers: containers,
 		Stats:      stats,
-		Duration:   3 * time.Second,
+		Duration:   tickTimer * time.Second,
 		ToggleFail: false,
 		StopFail:   false,
 		Text:       ti,
-		Filter:     "",
+		Filter:     initFilter,
 	}
+}
+
+func processFlags() {
+	help := flag.Bool("h", false, "Display this message and exit")
+	flag.DurationVar(&tickTimer, "d", 3, "Set duration between stat fetches in seconds")
+	flag.StringVar(&initFilter, "f", "", "Set initial filter")
+	flag.StringVar(&logFile, "l", "logs/log.log", "Set location of log file")
+	pwr := flag.Bool("p", false, "Display and record power readings")
+	flag.Parse()
+
+	if *help {
+		fmt.Println(helpMessage)
+		os.Exit(0)
+	}
+	resources.PowerOn = *pwr
 }

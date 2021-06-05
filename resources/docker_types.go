@@ -2,7 +2,7 @@ package resources
 
 type Container struct {
 	Id    string
-	Names []string
+	Image string
 }
 
 type NetworkETH struct {
