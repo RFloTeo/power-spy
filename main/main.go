@@ -12,6 +12,25 @@ import (
 	"time"
 )
 
+const (
+	helpMessage = `A tool for monitoring and recording resource usage stats of Docker containers and power consumption.
+
+Usage: powerspy [COMMANDS]
+
+Commands:
+  -d integer  - Set duration between stat fetches in seconds
+  -f string   - Set initial filter
+  -h          - Display this message and exit
+  -l string   - Set location of log file
+  -p          - Display and record power readings`
+)
+
+var (
+	tickTimer  time.Duration
+	initFilter string
+	logFile    string
+)
+
 func main() {
 	processFlags()
 
@@ -60,13 +79,15 @@ func initModel() display.Model {
 }
 
 func processFlags() {
+	var timer int
 	help := flag.Bool("h", false, "Display this message and exit")
-	flag.DurationVar(&tickTimer, "d", 3, "Set duration between stat fetches in seconds")
+	flag.IntVar(&timer, "d", 3, "Set duration between stat fetches in seconds")
 	flag.StringVar(&initFilter, "f", "", "Set initial filter")
 	flag.StringVar(&logFile, "l", "logs/log.log", "Set location of log file")
 	pwr := flag.Bool("p", false, "Display and record power readings")
 	flag.Parse()
 
+	tickTimer = time.Duration(timer)
 	if *help {
 		fmt.Println(helpMessage)
 		os.Exit(0)

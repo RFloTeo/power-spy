@@ -26,13 +26,12 @@ type Model struct {
 type TickMsg time.Time
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(textinput.Blink, tea.Every(m.Duration, func(t time.Time) tea.Msg {
+	return tea.Batch(textinput.Blink, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
 	}))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds = []tea.Cmd{}
 	switch msg := msg.(type) {
 	case TickMsg:
 		keys := m.getKeys()
@@ -49,8 +48,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.Text.Focused() && msg.String() != " " {
 			var cmd tea.Cmd
 			m.Text, cmd = m.Text.Update(msg)
-			cmds = append(cmds, cmd)
-			break
+			return m, cmd
 		}
 		switch msg.String() {
 		case "q": // Quit
@@ -85,15 +83,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	cmds = append(cmds, tea.Every(m.Duration, func(t time.Time) tea.Msg {
+	return m, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	}))
-	return m, tea.Batch(cmds...)
+	})
 }
 
 func (m Model) View() string {
 	var b bytes.Buffer
-	tab := tabwriter.NewWriter(&b, 5, 4, 1, '\t', 0)
+	tab := tabwriter.NewWriter(&b, 5, 4, 3, ' ', 0)
 
 	// General Info
 	s := "q-Quit"
@@ -117,7 +114,9 @@ func (m Model) View() string {
 		stats := m.Stats[c.Id]
 
 		if strings.Contains(c.Id, m.Filter) || strings.Contains(c.Image, m.Filter) {
-			fmt.Fprintf(tab, "%s\t%s\t%d\t%f\t%f\t%d\t%d\n", c.Id, c.Image, stats.Memory, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+			id := c.Id[:16]
+			mem := float64(stats.Memory) / (1048576)
+			fmt.Fprintf(tab, "%s\t%s\t%.2f MB\t%.2f\t%.2f\t%d\t%d\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
 		}
 	}
 	tab.Flush()

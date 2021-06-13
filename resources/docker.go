@@ -52,6 +52,7 @@ func GetStats(containers []string) map[string]DockerStats {
 			log.Printf("Decoding JSON for container %s failed: %s\n", c, err.Error())
 			continue
 		}
+		log.Printf("%d %d %d %d\n", decodedStats.Network.Eth0.RxBytes, decodedStats.Network.Eth0.TxBytes, decodedStats.Network.Eth5.RxBytes, decodedStats.Network.Eth5.TxBytes)
 
 		// Calculate stats to be displayed and add to map
 		usedMemory := decodedStats.Memory.Usage - decodedStats.Memory.Stats.Cache

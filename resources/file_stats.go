@@ -50,6 +50,9 @@ func StopRecording() error {
 }
 
 func RecordStats(containers []Container, stats map[string]DockerStats, muW int) {
+	if !IsRecording {
+		return
+	}
 	s := ""
 	for _, c := range containers {
 		stat := stats[c.Id]
