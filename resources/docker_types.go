@@ -12,7 +12,8 @@ type NetworkETH struct {
 
 type CpuStats struct {
 	CpuUsage struct {
-		Total int `json:"total_usage"`
+		Total  int   `json:"total_usage"`
+		PerCPU []int `json:"percpu_usage"`
 	} `json:"cpu_usage"`
 	SystemUsage int `json:"system_cpu_usage"`
 	OnlineCpus  int `json:"online_cpus"`
@@ -27,8 +28,8 @@ type JsonStats struct {
 		Stats struct {
 			Cache int `json:"cache"`
 		} `json:"stats"`
-		Usage    int `json:"usage"`
-		MaxUsage int `json:"limit"`
+		Usage int `json:"usage"`
+		Limit int `json:"limit"`
 	} `json:"memory_stats"`
 	Cpu    CpuStats `json:"cpu_stats"`
 	Precpu CpuStats `json:"precpu_stats"`
@@ -36,8 +37,8 @@ type JsonStats struct {
 
 type DockerStats struct {
 	Memory        int
-	MemoryPercent float32
-	CPU           float32
+	MemoryPercent float64
+	CPU           float64
 	NetworkIn     int
 	NetworkOut    int
 }

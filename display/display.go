@@ -115,8 +115,8 @@ func (m Model) View() string {
 
 		if strings.Contains(c.Id, m.Filter) || strings.Contains(c.Image, m.Filter) {
 			id := c.Id[:16]
-			mem := float64(stats.Memory) / (1048576)
-			fmt.Fprintf(tab, "%s\t%s\t%.2f MB\t%.2f\t%.2f\t%d\t%d\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+			mem := float64(stats.Memory) / 1000000.0
+			fmt.Fprintf(tab, "%s\t%s\t%.3f MiB\t%.3f\t%f\t%d\t%d\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
 		}
 	}
 	tab.Flush()

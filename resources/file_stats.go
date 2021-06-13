@@ -35,7 +35,7 @@ func ToggleRecording(filter string, containers, duration int) error {
 		if PowerOn {
 			hasPower = 1
 		}
-		fmt.Fprintf(f, "%s\n%d\n%d\n%d\n", timestamp, containers, duration, hasPower)
+		fmt.Fprintf(f, "%s\n%d\n%d\n%d\n", timestamp, containers, duration/1000000000, hasPower)
 	}
 	IsRecording = !IsRecording
 	return nil
