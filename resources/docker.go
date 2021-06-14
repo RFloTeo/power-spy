@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/client"
 	"log"
 	"math"
+	"time"
 )
 
 var (
@@ -36,6 +37,7 @@ func GetContainers() ([]Container, error) {
 }
 
 func GetStats(containers []string) map[string]DockerStats {
+	t := time.Now()
 	m := map[string]DockerStats{}
 	for _, c := range containers {
 		// Get stats from Docker API
@@ -56,18 +58,19 @@ func GetStats(containers []string) map[string]DockerStats {
 
 		// Calculate stats to be displayed and add to map
 		usedMemory := decodedStats.Memory.Usage - decodedStats.Memory.Stats.Cache
-		cpuDelta := float64(decodedStats.Cpu.CpuUsage.Total - decodedStats.Precpu.CpuUsage.Total)
-		sysDelta := float64(decodedStats.Cpu.SystemUsage - decodedStats.Precpu.SystemUsage)
-		cpus := math.Max(float64(decodedStats.Cpu.OnlineCpus), float64(len(decodedStats.Cpu.CpuUsage.PerCPU)))
+		cpuDelta := decodedStats.Cpu.CpuUsage.Total - decodedStats.Precpu.CpuUsage.Total
+		sysDelta := decodedStats.Cpu.SystemUsage - decodedStats.Precpu.SystemUsage
+		cpus := math.Max(decodedStats.Cpu.OnlineCpus, float64(len(decodedStats.Cpu.CpuUsage.PerCPU)))
 		stats := DockerStats{
 			Memory:        usedMemory,
 			MemoryPercent: float64(usedMemory) / float64(decodedStats.Memory.Limit) * 100.0,
-			CPU:           (cpuDelta / sysDelta) * cpus * 10000.0,
+			CPU:           (cpuDelta / sysDelta) * cpus * 100.0,
 			NetworkIn:     decodedStats.Network.Eth0.RxBytes + decodedStats.Network.Eth5.RxBytes,
 			NetworkOut:    decodedStats.Network.Eth0.TxBytes + decodedStats.Network.Eth5.TxBytes,
 		}
 		m[c] = stats
 	}
+	log.Printf("%s, %s\n", time.Now().String(), t.String())
 	return m
 }
 

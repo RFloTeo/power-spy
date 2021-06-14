@@ -12,11 +12,11 @@ type NetworkETH struct {
 
 type CpuStats struct {
 	CpuUsage struct {
-		Total  int   `json:"total_usage"`
-		PerCPU []int `json:"percpu_usage"`
+		Total  float64   `json:"total_usage"`
+		PerCPU []float64 `json:"percpu_usage"`
 	} `json:"cpu_usage"`
-	SystemUsage int `json:"system_cpu_usage"`
-	OnlineCpus  int `json:"online_cpus"`
+	SystemUsage float64 `json:"system_cpu_usage"`
+	OnlineCpus  float64 `json:"online_cpus"`
 }
 
 type JsonStats struct {

@@ -64,6 +64,10 @@ func initModel() display.Model {
 	ti.CharLimit = 100
 
 	containers, stats, err := resources.Refresh()
+	wattage := 0
+	if resources.PowerOn {
+		wattage = resources.GetMicroWatts()
+	}
 	if err != nil {
 		log.Println("Failed initial refresh")
 	}
@@ -75,6 +79,7 @@ func initModel() display.Model {
 		StopFail:   false,
 		Text:       ti,
 		Filter:     initFilter,
+		MuW:        wattage,
 	}
 }
 

@@ -26,12 +26,13 @@ type Model struct {
 type TickMsg time.Time
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(textinput.Blink, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
+	return nil /*tea.Batch(textinput.Blink, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	}))
+	}))*/
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds = []tea.Cmd{}
 	switch msg := msg.(type) {
 	case TickMsg:
 		keys := m.getKeys()
@@ -48,7 +49,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.Text.Focused() && msg.String() != " " {
 			var cmd tea.Cmd
 			m.Text, cmd = m.Text.Update(msg)
-			return m, cmd
+			cmds = append(cmds, cmd)
+			break
 		}
 		switch msg.String() {
 		case "q": // Quit
@@ -67,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "o": // Toggle recording
-			err := resources.ToggleRecording(m.Filter, len(m.Containers), int(m.Duration))
+			err := resources.ToggleRecording(m.Filter, len(m.Containers))
 			m.ToggleFail = err != nil
 		case " ": // Focus/Blur textbox
 			if !resources.IsRecording {
@@ -83,9 +85,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	return m, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
+	cmds = append(cmds, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	})
+	}))
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) View() string {
@@ -115,8 +118,10 @@ func (m Model) View() string {
 
 		if strings.Contains(c.Id, m.Filter) || strings.Contains(c.Image, m.Filter) {
 			id := c.Id[:16]
-			mem := float64(stats.Memory) / 1000000.0
-			fmt.Fprintf(tab, "%s\t%s\t%.3f MiB\t%.3f\t%f\t%d\t%d\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, stats.NetworkIn, stats.NetworkOut)
+			mem := float64(stats.Memory) / 1048576.0
+			net_in := getNetUnits(stats.NetworkIn)
+			net_out := getNetUnits(stats.NetworkOut)
+			fmt.Fprintf(tab, "%s\t%s\t%.3f MiB\t%.2f%%\t%.2f%%\t%s\t%s\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, net_in, net_out)
 		}
 	}
 	tab.Flush()
@@ -131,6 +136,17 @@ func (m Model) View() string {
 	s += "\n" + m.Text.View() + "\n\n"
 
 	return s
+}
+
+func getNetUnits(i int) string {
+	num := float64(i)
+	units := []string{"B", "kB", "MB", "GB"}
+	times := 0
+	for num >= 1000.0 {
+		num /= 1000.0
+		times++
+	}
+	return fmt.Sprintf("%.2f %s", num, units[times])
 }
 
 func (m Model) getKeys() []string {

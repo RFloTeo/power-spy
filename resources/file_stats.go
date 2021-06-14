@@ -8,13 +8,7 @@ import (
 	"time"
 )
 
-var (
-	recordingNo = 0
-	IsRecording = false
-	f           *os.File
-)
-
-func ToggleRecording(filter string, containers, duration int) error {
+func ToggleRecording(filter string, containers int) error {
 	if IsRecording {
 		err := f.Close()
 		if err != nil {
@@ -30,21 +24,28 @@ func ToggleRecording(filter string, containers, duration int) error {
 		}
 		recordingNo++
 
-		timestamp := time.Now().Format("2006-01-02 15:04:05")
+		startTime = time.Now()
 		hasPower := 0
 		if PowerOn {
 			hasPower = 1
 		}
-		fmt.Fprintf(f, "%s\n%d\n%d\n%d\n", timestamp, containers, duration/1000000000, hasPower)
+		fmt.Fprintf(f, "%d\n%d\n", containers, hasPower)
 	}
 	IsRecording = !IsRecording
 	return nil
 }
 
+var (
+	recordingNo = 0
+	IsRecording = false
+	f           *os.File
+	startTime   time.Time
+)
+
 // Called upon quitting the program
 func StopRecording() error {
 	if IsRecording {
-		return ToggleRecording("", 0, 0)
+		return ToggleRecording("", 0)
 	}
 	return nil
 }
@@ -53,6 +54,7 @@ func RecordStats(containers []Container, stats map[string]DockerStats, muW int) 
 	if !IsRecording {
 		return
 	}
+	recordTime := time.Since(startTime)
 	s := ""
 	for _, c := range containers {
 		stat := stats[c.Id]
@@ -63,6 +65,7 @@ func RecordStats(containers []Container, stats map[string]DockerStats, muW int) 
 	if PowerOn {
 		s += fmt.Sprintln(muW)
 	}
+	s += fmt.Sprintf("%f\n", recordTime.Seconds())
 	n, err := f.WriteString(s)
 	if err != nil && len(s) > 0 {
 		log.Printf("Tried to record %d bytes of stats, only recorded %d\n", len(s), n)
