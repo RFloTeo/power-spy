@@ -7,7 +7,6 @@ import (
 	"github.com/docker/docker/client"
 	"log"
 	"math"
-	"time"
 )
 
 var (
@@ -37,7 +36,6 @@ func GetContainers() ([]Container, error) {
 }
 
 func GetStats(containers []string) map[string]DockerStats {
-	t := time.Now()
 	m := map[string]DockerStats{}
 	for _, c := range containers {
 		// Get stats from Docker API
@@ -70,7 +68,6 @@ func GetStats(containers []string) map[string]DockerStats {
 		}
 		m[c] = stats
 	}
-	log.Printf("%s, %s\n", time.Now().String(), t.String())
 	return m
 }
 

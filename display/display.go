@@ -26,13 +26,12 @@ type Model struct {
 type TickMsg time.Time
 
 func (m Model) Init() tea.Cmd {
-	return nil /*tea.Batch(textinput.Blink, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
+	return tea.Batch(textinput.Blink, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
 		return TickMsg(t)
-	}))*/
+	}))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds = []tea.Cmd{}
 	switch msg := msg.(type) {
 	case TickMsg:
 		keys := m.getKeys()
@@ -44,13 +43,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.MuW = resources.GetMicroWatts()
 		}
 		go resources.RecordStats(m.Containers, m.Stats, m.MuW)
+		return m, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
+			return TickMsg(t)
+		})
 
 	case tea.KeyMsg:
 		if m.Text.Focused() && msg.String() != " " {
 			var cmd tea.Cmd
 			m.Text, cmd = m.Text.Update(msg)
-			cmds = append(cmds, cmd)
-			break
+			return m, cmd
 		}
 		switch msg.String() {
 		case "q": // Quit
@@ -85,10 +86,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	cmds = append(cmds, tea.Tick(m.Duration, func(t time.Time) tea.Msg {
-		return TickMsg(t)
-	}))
-	return m, tea.Batch(cmds...)
+	return m, nil
 }
 
 func (m Model) View() string {
@@ -119,9 +117,9 @@ func (m Model) View() string {
 		if strings.Contains(c.Id, m.Filter) || strings.Contains(c.Image, m.Filter) {
 			id := c.Id[:16]
 			mem := float64(stats.Memory) / 1048576.0
-			net_in := getNetUnits(stats.NetworkIn)
-			net_out := getNetUnits(stats.NetworkOut)
-			fmt.Fprintf(tab, "%s\t%s\t%.3f MiB\t%.2f%%\t%.2f%%\t%s\t%s\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, net_in, net_out)
+			netIn := getNetUnits(stats.NetworkIn)
+			netOut := getNetUnits(stats.NetworkOut)
+			fmt.Fprintf(tab, "%s\t%s\t%.3f MiB\t%.2f%%\t%.2f%%\t%s\t%s\n", id, c.Image, mem, stats.MemoryPercent, stats.CPU, netIn, netOut)
 		}
 	}
 	tab.Flush()
